@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Music Gallery — Spotify-like + Visualizer</title>
+<style>/* === NHÚNG FONT SVN CLAYTONIA === */
+@font-face {
+  font-family: 'SVN Claytonia';
+  src: url('SVN-Claytonia.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* === ÁP DỤNG FONT TOÀN TRANG === */
+body {
+  font-family: 'SVN Claytonia', cursive;
+  background: url('SVN-Claytonia.pjg') center/cover no-repeat;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* === VIỀN ẢNH NGOÀI === */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url(Saygex.png) center/cover no-repeat;
+  opacity: 0.6;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* === MÀU CHỮ === */
+h1, h2, h3, label {
+  color: #ff99cc; /* hồng pastel */
+}
+p, span, input, button {
+  color: #ffffff;
+}
+
+/* === NÚT ĐẸP === */
+button {
+  background: linear-gradient(135deg, #ff66b2, #ff99cc);
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  font-family: 'SVN Claytonia';
+}
+button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 105, 180, 0.4);
+}
+
+/* === CARD ÂM NHẠC === */
+.music-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 153, 204, 0.4);
+  border-radius: 16px;
+  padding: 10px;
+  transition: 0.3s;
+  font-family: 'SVN Claytonia';
+}
+.music-card:hover {
+  transform: scale(1.05);
+  border-color: #ff66b2;
+  box-shadow: 0 0 15px rgba(255, 153, 204, 0.6);
+}
+
+:root{
+  --bg1:#071026; --bg2:#07192a; --accent:#1db954; --text:#e6eef8;
+  --card: rgba(11,17,28,0.8);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Noto Sans',sans-serif;
+  color:var(--text);
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+}
+.app{max-width:1100px;margin:18px auto;padding:12px;position:relative;}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{font-weight:700;font-size:20px}
+.header .top-actions{display:flex;gap:8px;align-items:center}
+.btn{background:var(--accent);color:white;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+.small{font-size:13px;color:rgba(230,238,248,0.7)}
+
+/* layout */
+.layout{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}
+.sidebar{
+  width:320px; min-width:220px;
+  background:var(--card); padding:14px;border-radius:14px;
+  position:relative; z-index:2;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* menu background container (visual) */
+.menu {
+  width:320px; min-width:220px;
+  background-size:cover;background-position:center;
+  border-radius:20px;padding:20px;position:relative;overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  z-index:1;
+}
+.menu::before{ content:""; position:absolute; inset:0; background:rgba(0,0,0,0.35); backdrop-filter: blur(6px); z-index:0}
+.menu::after{ content:""; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 70%); animation:moveLight 8s linear infinite; z-index:0}
+@keyframes moveLight {0%{transform:translate(0,0)}50%{transform:translate(25%,25%)}100%{transform:translate(0,0)}}
+.menu *{position:relative; z-index:1}
+
+/* upload form inside sidebar */
+.upload label{display:block;font-size:13px;margin:8px 0 6px}
+.input{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text)}
+.row{display:flex;gap:8px}
+
+/* grid of tracks (main area) */
+.main-area{flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:18px}
+.card{background:rgba(255,255,255,0.03);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .16s, box-shadow .16s;position:relative;}
+.card:hover{transform:translateY(-6px);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.card .cover{width:100%;height:160px;object-fit:cover;background:#111}
+.card .meta{padding:10px}
+.card .meta h4{margin:0 0 6px;font-size:15px}
+.card .meta small{opacity:0.7}
+
+/* controls under upload */
+.controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* mini-player (corner) */
+#mini-player{
+  position:fixed;right:20px;bottom:20px;width:300px;background:linear-gradient(180deg, rgba(20,20,22,0.95), rgba(10,10,12,0.95));
+  padding:10px;border-radius:14px;display:flex;gap:12px;align-items:center;z-index:9999;box-shadow:0 12px 30px rgba(0,0,0,0.6);cursor:pointer;
+}
+#mini-player img{width:60px;height:60px;border-radius:10px;object-fit:cover}
+#mini-player .info{flex:1}
+#mini-player .info .t{font-weight:700}
+#mini-player .controls-mini{display:flex;gap:8px;align-items:center}
+
+/* full-player modal */
+#full-player{
+  position:fixed;inset:0;display:none;justify-content:center;align-items:center;z-index:9998;
+  background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);
+}
+.player-card{
+  width:420px;max-width:92%;border-radius:20px;overflow:hidden;position:relative;background:linear-gradient(180deg,#0b0e12,#071426);box-shadow:0 20px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;
+}
+.player-hero{position:relative;height:320px;overflow:hidden;background:#0c0f14}
+.player-hero img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .25s}
+.player-body{padding:16px;color:var(--text)}
+.player-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.player-sub{opacity:0.8;margin-bottom:12px}
+.player-audio{width:100%}
+
+/* visual canvas overlays */
+#vizCanvas, #bubbleCanvas {
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+}
+
+/* glow border effect on cover */
+.cover-glow{position:absolute;left:16px;bottom:-28px;width:120px;height:120px;border-radius:12px;z-index:2;pointer-events:none;filter:blur(18px);opacity:0.95}
+
+/* theme button & menu on full-player */
+#themeBtn{position:absolute;top:12px;right:56px;z-index:10;background:rgba(0,0,0,0.35);border-radius:8px;padding:6px;cursor:pointer;color:var(--text)}
+#closeBtn{position:absolute;top:12px;right:12px;z-index:10;background:rgba(0,0,0,0.35);border-radius:8px;padding:6px;cursor:pointer;color:var(--text)}
+#themeMenu{position:absolute;top:44px;right:12px;background:rgba(10,10,12,0.95);padding:8px;border-radius:8px;display:none;flex-direction:column;gap:6px;z-index:11;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
+.theme-option{padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--text)}
+.theme-option:hover{background:rgba(255,255,255,0.04)}
+
+/* theme styles that affect player-card background and bubble colors via data-theme attribute */
+.player-card[data-theme="dark"]{background:linear-gradient(180deg,#0b0e14,#04101b)}
+.player-card[data-theme="sunset"]{background:linear-gradient(180deg,#ff7e5f,#feb47b)}
+.player-card[data-theme="love"]{background:linear-gradient(180deg,#ff4da6,#ff1a75)}
+
+/* small responsive */
+@media(max-width:900px){ .layout{flex-direction:column}.menu{width:100%}.sidebar{width:100%;} #mini-player{right:10px;bottom:10px;width:260px} }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="brand">Music Gallery — trang đăng nhạc + ảnh</div>
+    <div class="top-actions">
+      <button id="changeMenuBtn" class="btn">📸 Đổi nền menu</button>
+      <input id="menuBgFile" type="file" accept="image/*" style="display:none">
+      <button id="exportBtn" class="btn">💾 Export JSON</button>
+      <input id="importFile" type="file" accept="application/json" style="display:none">
+      <button id="importBtn" class="btn">📂 Import JSON</button>
+    </div>
+  </div>
+
+  <div class="layout" style="margin-top:14px;">
+    <!-- LEFT: sidebar with upload -->
+    <div class="sidebar">
+      <div style="margin-bottom:10px;font-weight:700">Thêm bài mới</div>
+
+      <label>Tiêu đề bài nhạc</label>
+      <input id="title" class="input" placeholder="Nhập tên bài">
+
+      <label>Chọn file âm thanh (mp3, wav)</label>
+      <input id="audioFile" type="file" accept="audio/*" class="input">
+
+      <label>Ảnh bìa (jpg, png)</label>
+      <input id="coverFile" type="file" accept="image/*" class="input">
+
+      <label style="margin-top:8px">Thể loại</label>
+      <select id="category" class="input">
+        <option>🎶V-Pop</option><option>💀EDM</option><option>😭Buồn</option><option>👨🏿‍❤️‍💋‍👨🏻Tình yêu</option><option>🤷‍♂️Khác</option>
+      </select>
+
+      <div class="controls">
+        <button id="addBtn" class="btn">➕ Thêm vào thư viện</button>
+        <button id="clearAll" class="btn" style="background:#ce73d6">Xóa tất cả</button>
+      </div>
+
+      <div style="margin-top:12px;color:rgba(212, 158, 205, 0.6);font-size:13px">
+        Mẹo: bấm vào ảnh bìa để mở trình phát. Export/Import playlist dùng file JSON.
+      </div>
+    </div>
+
+    <!-- RIGHT: menu (with background image) + main grid -->
+    <div style="flex:1;">
+      <div class="menu" id="menuPanel">
+        <div style="font-weight:700;margin-bottom:10px">Tabs</div>
+        <div id="tabsRow" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="main-area">
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mini-player (corner) -->
+<div id="mini-player" title="Bấm để mở player">
+  <img id="miniCover" src="" alt="cover">
+  <div class="info">
+    <div class="t" id="miniTitle">Chưa có bài</div>
+    <div class="small" id="miniCat">—</div>
+  </div>
+  <div class="controls-mini">
+    <button id="miniToggle" class="btn" style="padding:6px 10px">▶</button>
+  </div>
+</div>
+
+<!-- Full player modal -->
+<div id="full-player" aria-hidden="true">
+  <div class="player-card" id="playerCard" data-theme="dark">
+    <div id="themeBtn">🎨</div>
+    <div id="closeBtn">✕</div>
+    <div id="themeMenu">
+      <div class="theme-option" data-theme="dark">🌌 Dark Neon</div>
+      <div class="theme-option" data-theme="sunset">🌅 Sunset Gradient</div>
+      <div class="theme-option" data-theme="love">💖 Love Pink Glow</div>
+    </div>
+
+    <div class="player-hero">
+      <canvas id="vizCanvas"></canvas>
+      <canvas id="bubbleCanvas"></canvas>
+      <img id="heroCover" src="" alt="cover">
+      <div class="cover-glow" id="coverGlow" style="left:20px;bottom:-30px;width:140px;height:140px;border-radius:18px;background:rgba(29,185,84,0.6)"></div>
+    </div>
+
+    <div class="player-body">
+      <div class="player-title" id="fullTitle">Chưa có</div>
+      <div class="player-sub" id="fullSub">—</div>
+      <audio id="mainAudio" class="player-audio" controls crossorigin="anonymous"></audio>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------------------
+   Storage keys & helpers
+   --------------------------- */
+const STORAGE_KEY = 'mg_playlist_v2';
+const MENU_BG_KEY = 'mg_menu_bg_v1';
+const THEME_KEY = 'mg_theme_v1';
+const VIZ_MODE_KEY = 'mg_viz_mode_v1';
+
+const categories = ["V-Pop","EDM","Buồn","Tình yêu","Khác"];
+let currentTab = categories[0];
+
+// load/save
+function loadList(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch(e){return []} }
+function saveList(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+/* ---------- UI refs ---------- */
+const grid = document.getElementById('grid');
+const tabsRow = document.getElementById('tabsRow');
+const menuPanel = document.getElementById('menuPanel');
+
+const titleEl = document.getElementById('title');
+const audioFileEl = document.getElementById('audioFile');
+const coverFileEl = document.getElementById('coverFile');
+const categoryEl = document.getElementById('category');
+const addBtn = document.getElementById('addBtn');
+const clearAllBtn = document.getElementById('clearAll');
+
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importFile = document.getElementById('importFile');
+
+const changeMenuBtn = document.getElementById('changeMenuBtn');
+const menuBgFile = document.getElementById('menuBgFile');
+
+const miniPlayer = document.getElementById('mini-player');
+const miniCover = document.getElementById('miniCover');
+const miniTitle = document.getElementById('miniTitle');
+const miniCat = document.getElementById('miniCat');
+const miniToggle = document.getElementById('miniToggle');
+
+const fullPlayer = document.getElementById('full-player');
+const playerCard = document.getElementById('playerCard');
+const themeBtn = document.getElementById('themeBtn');
+const themeMenu = document.getElementById('themeMenu');
+const themeOptions = document.querySelectorAll('.theme-option');
+const closeBtn = document.getElementById('closeBtn');
+
+const heroCover = document.getElementById('heroCover');
+const coverGlow = document.getElementById('coverGlow');
+const fullTitle = document.getElementById('fullTitle');
+const fullSub = document.getElementById('fullSub');
+const mainAudio = document.getElementById('mainAudio');
+
+const vizCanvas = document.getElementById('vizCanvas');
+const vctx = vizCanvas.getContext('2d');
+const bubbleCanvas = document.getElementById('bubbleCanvas');
+const bctx = bubbleCanvas.getContext('2d');
+
+/* ---------- init UI: tabs, menu bg, playlist ---------- */
+function renderTabs(){
+  tabsRow.innerHTML='';
+  for(const c of categories){
+    const b = document.createElement('button');
+    b.textContent = c;
+    b.className = 'btn';
+    if(c===currentTab) b.style.boxShadow = '0 6px 16px rgba(0,0,0,0.5)';
+    b.onclick = ()=>{ currentTab = c; renderTabs(); renderGrid(); spawnBubblesQuick(); }
+    tabsRow.appendChild(b);
+  }
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+/* ---------- render grid ---------- */
+function renderGrid(){
+  const list = loadList().filter(x=>x.cat===currentTab);
+  grid.innerHTML = '';
+  if(list.length===0){
+    grid.innerHTML = `<div style="opacity:0.7;padding:18px">Chưa có bài trong ${currentTab}</div>`;
+    return;
+  }
+  for(const t of list){
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `
+      <div style="height:160px;overflow:hidden"><img class="cover" src="${t.cover || placeholder() }" alt="cover"></div>
+      <div class="meta"><h4>${escapeHtml(t.title)}</h4><small>${escapeHtml(t.cat)}</small></div>
+    `;
+    // click cover => open full player for that id
+    card.querySelector('.cover').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openFullPlayer(t.id);
+    });
+    // add right-click delete?
+    const del = document.createElement('button'); del.textContent='Xóa'; del.style.margin='8px'; del.onclick = (ev)=>{ ev.stopPropagation(); if(confirm('Xóa bài này?')){ deleteTrack(t.id);} };
+    // optional place delete inside card
+    // card.appendChild(del);
+    grid.appendChild(card);
+  }
+}
+
+/* placeholder cover */
+function placeholder(){
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'><rect width='100%' height='100%' fill='#0b1220'/><text x='50%' y='50%' fill='#999' font-size='28' text-anchor='middle' dominant-baseline='central'>No Cover</text></svg>`);
+}
+
+/* ---------- add / delete tracks ---------- */
+addBtn.addEventListener('click', async ()=>{
+  const title = titleEl.value.trim();
+  const audioFile = audioFileEl.files[0];
+  if(!title || !audioFile){ alert('Cần tiêu đề và file âm thanh'); return; }
+  const audioData = await fileToDataURL(audioFile);
+  const coverData = coverFileEl.files[0] ? await fileToDataURL(coverFileEl.files[0]) : null;
+  const cat = categoryEl.value;
+  const list = loadList();
+  list.unshift({ id: Date.now(), title, audio: audioData, cover: coverData, cat });
+  saveList(list);
+  titleEl.value=''; audioFileEl.value=''; coverFileEl.value='';
+  renderGrid(); spawnHearts();
+});
+function deleteTrack(id){
+  const arr = loadList().filter(t=>t.id!==id); saveList(arr); renderGrid(); updateMiniIfPlaying(id);
+}
+clearAllBtn.addEventListener('click', ()=>{ if(confirm('Xóa toàn bộ playlist?')){ localStorage.removeItem(STORAGE_KEY); renderGrid(); resetMini(); } });
+
+/* ---------- export / import ---------- */
+exportBtn.addEventListener('click', ()=>{
+  const data = JSON.stringify(loadList(), null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'playlist.json'; a.click();
+});
+importBtn.addEventListener('click', ()=> importFile.click());
+importFile.addEventListener('change', async ()=>{
+  const f = importFile.files[0]; if(!f) return;
+  const txt = await f.text();
+  try{
+    const arr = JSON.parse(txt);
+    if(Array.isArray(arr)){ saveList(arr); renderGrid(); alert('Import thành công!'); }
+    else alert('File không đúng!');
+  }catch(e){ alert('Import lỗi: '+e.message); }
+});
+
+/* ---------- menu background upload & load ---------- */
+changeMenuBtn.addEventListener('click', ()=> menuBgFile.click());
+menuBgFile.addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const url = await fileToDataURL(f);
+  localStorage.setItem(MENU_BG_KEY, url);
+  applyMenuBg();
+  alert('Đã đổi nền menu!');
+});
+function applyMenuBg(){
+  const saved = localStorage.getItem(MENU_BG_KEY);
+  if(saved) menuPanel.style.backgroundImage = `url(${saved})`;
+  else menuPanel.style.backgroundImage = "url('https://i.imgur.com/B9h2R2N.jpg')";
+}
+applyMenuBg();
+
+/* ---------- file -> dataURL helper ---------- */
+function fileToDataURL(file){
+  return new Promise((res, rej)=>{
+    const r = new FileReader();
+    r.onload = ()=> res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+/* ---------- mini-player functions ---------- */
+let currentPlayingId = null;
+function resetMini(){
+  miniCover.src=''; miniTitle.textContent='Chưa có bài'; miniCat.textContent='—'; miniToggle.textContent='▶';
+}
+resetMini();
+
+function updateMiniForTrack(track){
+  if(!track){ resetMini(); return; }
+  miniCover.src = track.cover || placeholder();
+  miniTitle.textContent = track.title;
+  miniCat.textContent = track.cat;
+  miniToggle.textContent = mainAudio.paused ? '▶' : '⏸';
+}
+
+/* ---------- open full player ---------- */
+function openFullPlayer(id){
+  const list = loadList();
+  const t = list.find(x=>x.id===id); if(!t) return;
+  currentPlayingId = id;
+  heroCover.src = t.cover || placeholder();
+  fullTitle.textContent = t.title;
+  fullSub.textContent = t.cat;
+  mainAudio.src = t.audio;
+  mainAudio.play().catch(()=>{ /* ignore autoplay block */ });
+  fullPlayerShow();
+  updateMiniForTrack(t);
+}
+
+/* ---------- full player show/hide ---------- */
+function fullPlayerShow(){
+  fullPlayer.style.display = 'flex';
+  // resume audio context on user gesture
+  try{ if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }catch(e){}
+}
+function fullPlayerHide(){
+  fullPlayer.style.display = 'none';
+}
+
+/* clicking mini opens full for current track (if any) or opens empty player */
+miniPlayer.addEventListener('click', ()=>{
+  if(currentPlayingId){ openFullPlayer(currentPlayingId); }
+  else{ fullPlayerShow(); }
+});
+
+/* clicking outside full-player hides (and keep mini playing) */
+fullPlayer.addEventListener('click', (e)=>{
+  if(e.target === fullPlayer){ fullPlayerHide(); }
+});
+closeBtn.addEventListener('click', ()=> fullPlayerHide());
+
+/* ---------- update mini play/pause button and sync with mainAudio ---------- */
+miniToggle.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  if(!mainAudio.src){ alert('Chưa có bài đang chạy'); return; }
+  if(mainAudio.paused){ mainAudio.play(); miniToggle.textContent='⏸'; }
+  else{ mainAudio.pause(); miniToggle.textContent='▶'; }
+});
+mainAudio.addEventListener('play', ()=> miniToggle.textContent='⏸');
+mainAudio.addEventListener('pause', ()=> miniToggle.textContent='▶');
+mainAudio.addEventListener('play', ()=> spawnHearts());
+mainAudio.addEventListener('pause', ()=> { /* no-op */ });
+
+/* ensure mini updates if deleting current track */
+function updateMiniIfPlaying(deletedId){
+  if(currentPlayingId === deletedId){
+    mainAudio.pause();
+    currentPlayingId = null;
+    resetMini();
+  }
+}
+
+/* ---------- Theme switcher on full-player ---------- */
+function applySavedTheme(){
+  const t = localStorage.getItem(THEME_KEY) || 'dark';
+  playerCard.setAttribute('data-theme', t);
+  // also set cover glow base color quick
+  if(t==='dark') coverGlow.style.background='rgba(29,185,84,0.55)';
+  else if(t==='sunset') coverGlow.style.background='rgba(255,140,70,0.45)';
+  else if(t==='love') coverGlow.style.background='rgba(255,80,170,0.45)';
+}
+applySavedTheme();
+
+themeBtn.addEventListener('click',(e)=>{ e.stopPropagation(); themeMenu.style.display = themeMenu.style.display === 'flex' ? 'none':'flex'; });
+document.addEventListener('click', ()=> { themeMenu.style.display = 'none'; });
+themeOptions.forEach(opt=>{
+  opt.addEventListener('click', (ev)=>{
+    const th = opt.dataset.theme;
+    playerCard.setAttribute('data-theme', th);
+    localStorage.setItem(THEME_KEY, th);
+    themeMenu.style.display = 'none';
+    // adjust glow color
+    if(th==='dark') coverGlow.style.background='rgba(29,185,84,0.55)';
+    else if(th==='sunset') coverGlow.style.background='rgba(255,140,70,0.45)';
+    else if(th==='love') coverGlow.style.background='rgba(255,80,170,0.45)';
+  });
+});
+
+/* ---------- render initial UI ---------- */
+renderTabs();
+renderGrid();
+
+/* ---------- Visualizer & Bubble system (Web Audio API) ---------- */
+let audioCtx, analyser, sourceNode, dataArray, vizAnimationId;
+
+function setupAudioContextIfNeeded(){
+  if(audioCtx) return;
+  try{
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaElementSource(mainAudio);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    sourceNode.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+  }catch(e){
+    console.warn('AudioContext init fail', e);
+  }
+}
+
+/* draw visual bars */
+function drawVisualizer(){
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+  const w = vizCanvas.width = vizCanvas.clientWidth;
+  const h = vizCanvas.height = vizCanvas.clientHeight;
+  vctx.clearRect(0,0,w,h);
+
+  const barCount = 64;
+  const barWidth = Math.max(3, w / barCount * 0.6);
+  const gap = (w - barCount * barWidth) / (barCount + 1);
+  const baseY = h * 0.78;
+
+  for(let i=0;i<barCount;i++){
+    const idx = Math.floor(i * dataArray.length / barCount);
+    const v = dataArray[idx] / 255;
+    const barH = v * h * 0.45;
+    const x = gap + i*(barWidth+gap);
+    if(playerCard.getAttribute('data-theme')==='sunset'){
+      vctx.fillStyle = `rgba(${220 + i%30},${110 + i%40},${70 + i%20},${0.9})`;
+    }else if(playerCard.getAttribute('data-theme')==='love'){
+      vctx.fillStyle = `rgba(${255},${50 + i%80},${150 + i%60},${0.9})`;
+    }else{
+      vctx.fillStyle = `rgba(${30 + i%200},${200 - i%120},${80 + i%100},${0.9})`;
+    }
+    roundRect(vctx, x, baseY - barH, barWidth, barH, barWidth/2);
+    vctx.fill();
+  }
+
+  // center pulse
+  const bass = dataArray.slice(0, Math.floor(dataArray.length*0.12)).reduce((a,b)=>a+b,0)/(dataArray.length*0.12);
+  const pulse = Math.min(1, bass/180);
+  const cx = w*0.5, cy = h*0.35, rad = 60 + pulse*220;
+  const g = vctx.createRadialGradient(cx,cy,20,cx,cy,rad);
+  g.addColorStop(0, `rgba(255,255,255,${0.03 + pulse*0.18})`);
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  vctx.fillStyle = g; vctx.fillRect(0,0,w,h);
+
+  vizAnimationId = requestAnimationFrame(drawVisualizer);
+}
+
+/* bubbles like iOS */
+class Bubble{
+  constructor(x,y,r, color, speed){ this.x=x; this.y=y; this.r=r; this.color=color; this.speed=speed; this.alpha=1; }
+  update(){ this.y -= this.speed; this.alpha -= 0.01; }
+  draw(){ bctx.beginPath(); bctx.arc(this.x,this.y,this.r,0,Math.PI*2); bctx.fillStyle = `rgba(${this.color}, ${this.alpha})`; bctx.fill(); }
+}
+let bubbles = [];
+function drawBubbles(){
+  bctx.clearRect(0,0,bubbleCanvas.width,bubbleCanvas.height);
+  if(analyser) analyser.getByteFrequencyData(dataArray);
+  const avg = analyser ? dataArray.reduce((a,b)=>a+b,0)/dataArray.length : 0;
+  // spawn more when louder
+  if(avg>70 && Math.random()>0.6){
+    const x = Math.random()*bubbleCanvas.width;
+    const r = Math.random()*10 + 6;
+    const speed = Math.random()*1.2 + 0.6;
+    const color = `${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)}`;
+    bubbles.push(new Bubble(x, bubbleCanvas.height + 10, r, color, speed));
+  }
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b = bubbles[i];
+    b.update(); b.draw();
+    if(b.alpha <= 0) bubbles.splice(i,1);
+  }
+  requestAnimationFrame(drawBubbles);
+}
+
+/* glow effect around cover based on beat */
+function glowLoop(){
+  if(!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+  const avg = dataArray.reduce((a,b)=>a+b,0)/dataArray.length;
+  const glow = Math.min(avg/3, 90);
+  const hue = Math.floor((avg/255) * 360);
+  const color = `hsl(${hue},80%,60%)`;
+  coverGlow.style.boxShadow = `0 0 ${glow}px ${color}`;
+  requestAnimationFrame(glowLoop);
+}
+
+/* helper roundRect */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* setup sizes */
+function resizeCanvases(){
+  vizCanvas.width = vizCanvas.clientWidth;
+  vizCanvas.height = vizCanvas.clientHeight;
+  bubbleCanvas.width = bubbleCanvas.clientWidth;
+  bubbleCanvas.height = bubbleCanvas.clientHeight;
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+/* start audio visual systems when audio is played */
+mainAudio.addEventListener('play', ()=>{
+  setupAudioContextIfNeeded();
+  if(!analyser) return;
+  if(!vizAnimationId) drawVisualizer();
+  drawBubbles();
+  glowLoop();
+  updateMiniForTrack(loadList().find(x=>x.id===currentPlayingId));
+});
+
+/* quick spawn effects */
+function spawnHearts(){ for(let i=0;i<6;i++){ const d=document.createElement('div'); d.style.position='fixed'; d.style.left=(50+Math.random()*20)+'vw'; d.style.top=(70+Math.random()*10)+'vh'; d.style.width='14px'; d.style.height='14px'; d.style.borderRadius='50%'; d.style.background='rgba(255,255,255,0.08)'; d.style.zIndex=9999; document.body.appendChild(d); setTimeout(()=>d.remove(),900); } }
+function spawnBubblesQuick(){ for(let i=0;i<8;i++){ const x = Math.random()*bubbleCanvas.width; const r = Math.random()*8 + 4; const speed = Math.random()*1 + 0.6; const color = `${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)}`; bubbles.push(new Bubble(x,bubbleCanvas.height+10,r,color,speed)); } }
+
+/* ---------- utility: open last played on load ---------- */
+function tryRestoreLast(){
+  const list = loadList();
+  if(list.length>0){
+    currentPlayingId = list[0].id;
+    updateMiniForTrack(list[0]);
+  } else resetMini();
+}
+tryRestoreLast();
+
+/* ---------- helper: open full when clicking a card's cover already handled above ---------- */
+/* ---------- file upload permission: ensure user gesture triggers AudioContext resume ---------- */
+document.addEventListener('click', ()=>{ if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume().catch(()=>{}); } });
+
+/* ---------- utility: load saved theme initial (already applied earlier via playerCard attr) ---------- */
+
+/* ---------- small UX: when mainAudio changes source, sync mini display ---------- */
+mainAudio.addEventListener('play', ()=>{
+  // find track by src
+  const list = loadList();
+  const t = list.find(x=>x.audio === mainAudio.src || x.audio === mainAudio.currentSrc);
+  if(t){ currentPlayingId = t.id; updateMiniForTrack(t); }
+});
+mainAudio.addEventListener('ended', ()=> { miniToggle.textContent='▶'; });
+
+/* ---------- helper to open sample if none exist (commented out) ---------- */
+/* if(loadList().length===0){
+  // optionally create sample track here
+} */
+
+/* ---------- initial render sizes and start bubble loop (in case) ---------- */
+resizeCanvases();
+drawBubbles();
+
+/* ---------- helper: update mini display if playing track changes externally ---------- */
+function updateMiniForTrack(track){
+  if(!track){ resetMini(); return; }
+  miniCover.src = track.cover || placeholder();
+  miniTitle.textContent = track.title;
+  miniCat.textContent = track.cat;
+}
+/* ---------- end of script ---------- */
+</script>
+</body>
+</html>
